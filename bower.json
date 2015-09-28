@@ -1,7 +1,9 @@
 {
   "name": "konquest-client",
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "phaser-official": "~2.4.3"
+  },
   "devDependencies": {
     "chai": "~3.3.0",
     "mocha": "~2.3.3"

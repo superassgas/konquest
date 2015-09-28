@@ -30,10 +30,13 @@
       "browser": true
     },
     "rules": {
-      "quotes": [
-        2,
-        "single"
-      ]
+      "quotes": [2, "single"],
+      "semi": [2, "never"],
+      "strict": [2, "never"]
+    },
+    "globals": {
+      "Phaser": true,
+      "States": true
     }
   }
 }

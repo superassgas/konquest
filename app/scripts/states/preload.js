@@ -17,6 +17,10 @@
       this.load.image('starSmall', 'assets/sprites/star.png')
       this.load.image('starBig', 'assets/sprites/star2.png')
       this.load.image('background', 'assets/backgrounds/background2.png')
+
+      this.load.image('bullet', 'assets/sprites/bullet-blue.png')
+      this.load.image('bulletFire', 'assets/sprites/bullet-fire.png')
+      this.load.spritesheet('kaboom', 'assets/sprites/explode.png', 128, 128)
     },
     create: function() {
       // this.asset.cropEnabled = false

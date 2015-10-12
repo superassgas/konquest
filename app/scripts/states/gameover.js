@@ -1,6 +1,6 @@
 (function() {
 
-  var GameOver = window.States.GameOver = function() {}
+  var GameOver = window.State.GameOver = function() {}
 
   GameOver.prototype = {
     preload: function() {},

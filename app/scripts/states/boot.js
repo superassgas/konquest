@@ -1,6 +1,6 @@
 (function() {
 
-  var Boot = window.States.Boot = function() {}
+  var Boot = window.State.Boot = function() {}
 
   Boot.prototype = {
     preload: function() {

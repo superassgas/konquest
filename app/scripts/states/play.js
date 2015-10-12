@@ -1,56 +1,14 @@
 (function() {
 
-  var Play = window.States.Play = function() {}
-
-  var Bullet = function (game, key) {
-      Phaser.Sprite.call(this, game, 0, 0, key);
-      this.texture.baseTexture.scaleMode = PIXI.scaleModes.NEAREST;
-      this.anchor.set(0.5);
-      this.checkWorldBounds = true;
-      this.outOfBoundsKill = true;
-      this.exists = false;
-
-      this.tracking = false;
-      this.scaleSpeed = 0;
-
-  };
-
-  Bullet.prototype = Object.create(Phaser.Sprite.prototype);
-  Bullet.prototype.constructor = Bullet;
-
-  Bullet.prototype.fire = function (x, y, angle, speed, gx, gy) {
-
-      gx = gx || 0;
-      gy = gy || 0;
-
-      this.reset(x, y);
-      this.scale.set(1);
-
-      this.game.physics.arcade.velocityFromAngle(angle, speed, this.body.velocity);
-
-      this.angle = angle;
-
-      this.body.gravity.set(gx, gy);
-
-  };
-
-  Bullet.prototype.update = function () {
-
-      if (this.tracking)
-      {
-          this.rotation = Math.atan2(this.body.velocity.y, this.body.velocity.x);
-      }
-
-      if (this.scaleSpeed > 0)
-      {
-          this.scale.x += this.scaleSpeed;
-          this.scale.y += this.scaleSpeed;
-      }
-
-  };
+  var Play = window.State.Play = function() {}
 
   Play.prototype = {
-    preload: function() {},
+    preload: function() {
+      this.load.image('bulletBlue', 'assets/sprites/bullet-blue.png')
+      this.load.image('bulletFire', 'assets/sprites/bullet-fire.png')
+      this.load.image('bulletRocket', 'assets/sprites/bullet-rocket.png')
+      this.load.spritesheet('kaboom', 'assets/sprites/explode.png', 128, 128)
+    },
 
     onJoinPlayer: function(playerStateData) {
       var player = this.game.add.sprite(32, 32, 'dude')
@@ -63,8 +21,11 @@
       player.body.bounce.y = 0.1
       player.body.collideWorldBounds = true
       player.body.setSize(20, 32, 5, 16)
-      player.cursors = {left: {}, right: {}, up: {}};
-      player.spaceButton = {};
+      player.cursors = {left: {}, right: {}, up: {}}
+      player.spaceButton = {}
+
+      // TODO change weapon as necessary
+      player.weapon = new Weapon.Rocket(this.game)
 
       player.animations.add('left', [0, 1, 2, 3], 10, true)
       player.animations.add('turn', [4], 20, true)
@@ -117,18 +78,22 @@
       this.bullets.enableBody = true
       this.bullets.physicsBodyType = Phaser.Physics.ARCADE
       this.bullets.createMultiple(30, 'bullet')
-      this.bullets.setAll('tracking', true)
-      this.bullets.setAll('allowGravity', false)
       this.bullets.setAll('anchor.x', 0.5)
       this.bullets.setAll('anchor.y', 0.5)
+      this.bullets.setAll('allowGravity', false)
       this.bullets.setAll('outOfBoundsKill', true)
       this.bullets.setAll('checkWorldBounds', true)
       this.nextFire = 0
 
-      this.explosions = this.game.add.group();
-      this.explosions.createMultiple(30, 'kaboom');
-      this.explosions.setAll('anchor.x', 0.5)
-      this.explosions.setAll('anchor.y', 0.5)
+      this.explosions = this.game.add.group()
+      for(var i = 0; i < 30; i++) {
+        var explosion = this.explosions.create(0, 0, 'kaboom', [0], false)
+        explosion.anchor.set(0.5, 0.5)
+        explosion.animations.add('kaboom')
+      }
+      // this.explosions.createMultiple(30, 'kaboom');
+      // this.explosions.setAll('anchor.x', 0.5)
+      // this.explosions.setAll('anchor.y', 0.5)
 
       // Temporary offline solution
       setTimeout(function() {
@@ -142,23 +107,24 @@
             cursors: this.cursors,
             spaceButton: this.spaceButton
           });
-        }.bind(this), 50);
+        }.bind(this), 100);
       }.bind(this), 50);
     },
 
     bulletToFloor: function(bullet, floor) {
       var explosionAnimation = this.explosions.getFirstExists(false);
-      explosionAnimation.reset(bullet.x, bullet.y);
-      explosionAnimation.play('kaboom', 30, false, true);
 
-      bullet.reset()
+      explosionAnimation.reset(bullet.x, bullet.y);
+      explosionAnimation.play('kaboom', 16, false, true);
+
+      bullet.kill()
     },
 
     update: function() {
-      this.game.physics.arcade.collide(this.bullets, this.mapLayer, this.bulletToFloor, null, this);
 
       this.players.forEach(function(player) {
         this.game.physics.arcade.collide(player, this.mapLayer);
+        this.game.physics.arcade.collide(this.player.weapon, this.mapLayer, this.bulletToFloor, null, this);
 
         player.body.velocity.x = 0;
         player.body.acceleration.y = 0;
@@ -200,16 +166,19 @@
         }
       }.bind(this));
 
+      // TODO remove during online
       if (this.player && this.game.input.activePointer.isDown && this.game.time.now > this.nextFire) {
         this.nextFire = this.game.time.now + 100
 
-        var bullet = this.bullets.getFirstExists(false);
-        bullet.reset(this.player.body.x, this.player.body.y);
-        // bullet.tracking = true
-        // var angle = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
-        bullet.rotation = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
-        // console.log(bullet.rotation)
-        this.game.physics.arcade.velocityFromAngle(bullet.angle, 500, bullet.body.velocity)
+        // var bullet = this.bullets.getFirstExists(false);
+        // bullet.reset(this.player.body.x, this.player.body.y);
+        // // bullet.tracking = true
+        // // var angle = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
+        // bullet.rotation = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
+        // // console.log(bullet.rotation)
+        // this.game.physics.arcade.velocityFromAngle(bullet.angle, 500, bullet.body.velocity)
+
+        this.player.weapon.fire(this.player, this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer))
       }
     }
   }

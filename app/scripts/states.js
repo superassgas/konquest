@@ -1,5 +1,5 @@
 (function() {
 
-  window.States = {}
+  window.State = {}
 
 })()

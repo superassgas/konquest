@@ -1,6 +1,6 @@
 (function() {
 
-  var Menu = window.States.Menu = function() {}
+  var Menu = window.State.Menu = function() {}
 
   Menu.prototype = {
     preload: function() {},

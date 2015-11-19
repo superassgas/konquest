@@ -11,6 +11,8 @@
 
     this.tracking = false
     this.scaleSpeed = 0
+
+    this.debug = true // Un-comment this to see the collision box
   }
   Weapon.Base.prototype = Object.create(Phaser.Sprite.prototype)
   Weapon.Base.prototype.constructor = Weapon.Base

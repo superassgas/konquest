@@ -16,16 +16,19 @@
       this.game.physics.enable(player, Phaser.Physics.ARCADE)
 
       player.id = playerStateData.id
+      player.anchor.set(0.5, 0.5)
       player.facing = 'right'
 
       player.body.bounce.y = 0.1
       player.body.collideWorldBounds = true
-      player.body.setSize(20, 32, 5, 16)
+      // player.body.setSize(20, 32, 5, 16)
+      player.body.setSize(20, 32, 0, 6)
       player.cursors = {left: {}, right: {}, up: {}}
       player.spaceButton = {}
+      player.nextFire = 0
 
       // TODO change weapon as necessary
-      player.weapon = new Weapon.Rocket(this.game)
+      player.weapon = new Weapon.Laser(this.game)
 
       player.animations.add('left', [0, 1, 2, 3], 10, true)
       player.animations.add('turn', [4], 20, true)
@@ -40,10 +43,17 @@
       }
     },
 
-    onUpdatePlayer: function(playerStateData) {
-      var player = this.playerMap[playerStateData.id];
-      player.cursors = playerStateData.cursors;
-      player.spaceButton = playerStateData.spaceButton;
+    onUpdatePlayer: function(playerState) {
+      // TODO handle x and y updates with threshold and deadreckoning
+      var player = this.playerMap[playerState.id];
+      player.cursors = playerState.cursors;
+      player.spaceButton = playerState.spaceButton;
+
+      // TODO make shooting more responsive
+      player.shoot = playerState.fire
+      if (playerState.fire) {
+        player.pointer = playerState.pointer
+      }
     },
 
     create: function() {
@@ -83,7 +93,6 @@
       this.bullets.setAll('allowGravity', false)
       this.bullets.setAll('outOfBoundsKill', true)
       this.bullets.setAll('checkWorldBounds', true)
-      this.nextFire = 0
 
       this.explosions = this.game.add.group()
       for(var i = 0; i < 30; i++) {
@@ -91,23 +100,29 @@
         explosion.anchor.set(0.5, 0.5)
         explosion.animations.add('kaboom')
       }
-      // this.explosions.createMultiple(30, 'kaboom');
-      // this.explosions.setAll('anchor.x', 0.5)
-      // this.explosions.setAll('anchor.y', 0.5)
 
       // Temporary offline solution
       setTimeout(function() {
         this.onJoinPlayer({
           id: 123
-        });
+        })
 
         setInterval(function() {
-          this.onUpdatePlayer({
+          var state = {
             id: 123,
             cursors: this.cursors,
             spaceButton: this.spaceButton
-          });
-        }.bind(this), 100);
+          }
+          if (this.game.input.activePointer.isDown) {
+            state.fire = true
+            state.pointer = {
+              x: this.game.input.activePointer.worldX,
+              y: this.game.input.activePointer.worldY
+            }
+            console.log(state.pointer)
+          }
+          this.onUpdatePlayer(state);
+        }.bind(this), 200);
       }.bind(this), 50);
     },
 
@@ -124,7 +139,7 @@
 
       this.players.forEach(function(player) {
         this.game.physics.arcade.collide(player, this.mapLayer);
-        this.game.physics.arcade.collide(this.player.weapon, this.mapLayer, this.bulletToFloor, null, this);
+        this.game.physics.arcade.collide(player.weapon, this.mapLayer, this.bulletToFloor, null, this);
 
         player.body.velocity.x = 0;
         player.body.acceleration.y = 0;
@@ -164,22 +179,14 @@
         if (player.spaceButton.isDown) {
             player.body.acceleration.y = -1100
         }
+
+        if (player.shoot && this.game.time.now > player.nextFire) {
+          player.nextFire = this.game.time.now + 100
+
+          player.weapon.fire(player, this.game.physics.arcade.angleToXY(player, player.pointer.x, player.pointer.y))
+        }
       }.bind(this));
 
-      // TODO remove during online
-      if (this.player && this.game.input.activePointer.isDown && this.game.time.now > this.nextFire) {
-        this.nextFire = this.game.time.now + 100
-
-        // var bullet = this.bullets.getFirstExists(false);
-        // bullet.reset(this.player.body.x, this.player.body.y);
-        // // bullet.tracking = true
-        // // var angle = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
-        // bullet.rotation = this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer)
-        // // console.log(bullet.rotation)
-        // this.game.physics.arcade.velocityFromAngle(bullet.angle, 500, bullet.body.velocity)
-
-        this.player.weapon.fire(this.player, this.game.physics.arcade.angleToPointer(this.player, this.game.input.activePointer))
-      }
     }
   }
 
